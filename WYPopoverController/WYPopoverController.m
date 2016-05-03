@@ -2651,15 +2651,8 @@ static WYPopoverTheme *defaultTheme_ = nil;
     {
         [viewController viewWillDisappear:aAnimated];
     }
-    
-    @try {
-        if ([viewController respondsToSelector:@selector(preferredContentSize)]) {
-            [viewController removeObserver:self forKeyPath:NSStringFromSelector(@selector(preferredContentSize))];
-        } else {
-            [viewController removeObserver:self forKeyPath:NSStringFromSelector(@selector(contentSizeForViewInPopover))];
-        }
-    }
-    @catch (NSException * __unused exception) {}
+    [self unregisterViewControllerKVO];
+
     
     if (aAnimated)
     {
@@ -2693,7 +2686,16 @@ static WYPopoverTheme *defaultTheme_ = nil;
 }
 
 #pragma mark KVO
-
+-(void) unregisterViewControllerKVO{
+    @try {
+        if ([viewController respondsToSelector:@selector(preferredContentSize)]) {
+            [viewController removeObserver:self forKeyPath:NSStringFromSelector(@selector(preferredContentSize))];
+        } else {
+            [viewController removeObserver:self forKeyPath:NSStringFromSelector(@selector(contentSizeForViewInPopover))];
+        }
+    }
+    @catch (NSException * __unused exception) {}
+}
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
     if (object == viewController)
@@ -3152,6 +3154,7 @@ static CGPoint WYPointRelativeToOrientation(CGPoint origin, CGSize size, UIInter
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [self unregisterViewControllerKVO];
     
     [backgroundView removeFromSuperview];
     [backgroundView setDelegate:nil];
